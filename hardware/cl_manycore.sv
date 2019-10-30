@@ -417,8 +417,9 @@ module cl_manycore
     );
 
   end
-  else if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram || 
-           mem_cfg_p == e_vcache_blocking_axi4_f1_model) begin: lv1_vcache
+  else if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram  || 
+           mem_cfg_p == e_vcache_blocking_axi4_f1_model ||
+	   mem_cfg_p == e_vcache_blocking_axi4_xilinx_hbm_direct_no_ro) begin: lv1_vcache
 
     import bsg_cache_pkg::*;
 
@@ -485,8 +486,9 @@ module cl_manycore
 
   // LEVEL 2
   //
-  if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram || 
-      mem_cfg_p == e_vcache_blocking_axi4_f1_model) begin: lv2_axi4
+  if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram  || 
+      mem_cfg_p == e_vcache_blocking_axi4_f1_model ||
+      mem_cfg_p == e_vcache_blocking_axi4_xilinx_hbm_direct_no_ro) begin: lv2_axi4
 
     logic [axi_id_width_p-1:0] axi_awid;
     logic [axi_addr_width_p-1:0] axi_awaddr;
@@ -652,6 +654,185 @@ module cl_manycore
    assign lv2_axi4.axi_rvalid           = m_axi4_manycore_rvalid;
    assign m_axi4_manycore_rready        = lv2_axi4.axi_rready;
   end // if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram)
+  else if (mem_cfg_p == e_vcache_blocking_axi4_xilinx_hbm_direct_no_ro) begin
+     // Attach cache to a single HBM
+
+     // tie-off one HBM channel
+     `define tie_hbm_channel(channel_name)	\
+        ,.AXI_``channel_name``_ACLK(core_clk)	\
+	,.AXI_``channel_name``_ARESET_N(1'b0)	\
+	,.AXI_``channel_name``_ARADDR()		\
+	,.AXI_``channel_name``_ARBURST()	\
+	,.AXI_``channel_name``_ARID()		\
+	,.AXI_``channel_name``_ARLEN()		\
+	,.AXI_``channel_name``_ARSIZE()		\
+	,.AXI_``channel_name``_ARVALID()	\
+	,.AXI_``channel_name``_AWADDR()		\
+	,.AXI_``channel_name``_AWBURST()	\
+	,.AXI_``channel_name``_AWID()		\
+	,.AXI_``channel_name``_AWLEN()		\
+	,.AXI_``channel_name``_AWSIZE()		\
+	,.AXI_``channel_name``_AWVALID()	\
+	,.AXI_``channel_name``_RREADY()		\
+	,.AXI_``channel_name``_BREADY()		\
+	,.AXI_``channel_name``_WDATA()		\
+	,.AXI_``channel_name``_WLAST()		\
+	,.AXI_``channel_name``_WSTRB()		\
+	,.AXI_``channel_name``_WDATA_PARITY()	\
+	,.AXI_``channel_name``_WVALID()		\
+	,.AXI_``channel_name``_ARREADY()	\
+	,.AXI_``channel_name``_AWREADY()	\
+	,.AXI_``channel_name``_RDATA_PARITY()	\
+	,.AXI_``channel_name``_RDATA()		\
+	,.AXI_``channel_name``_RID()		\
+	,.AXI_``channel_name``_RLAST()		\
+	,.AXI_``channel_name``_RRESP()		\
+	,.AXI_``channel_name``_RVALID()		\
+	,.AXI_``channel_name``_WREADY()		\
+	,.AXI_``channel_name``_BID()		\
+	,.AXI_``channel_name``_BRESP()		\
+	,.AXI_``channel_name``_BVALID()
+
+     // reset signals
+     logic axi_reset_n;
+     logic apb_reset_n;
+
+     initial begin
+	axi_reset_n = 1'b1;
+	#200ns;
+	axi_reset_n = 1'b0;
+	#4500ns;
+	axi_reset_n = 1'b1;
+     end
+
+     assign apb_reset_n = axi_reset_n;
+
+     // nosynth reference clock generator
+     // 100MHz
+
+     logic   hbm_ref_clk0;
+     logic   hbm_ref_clk1;
+     logic   apb_clk0;
+     logic   apb_clk1;
+
+     bsg_nonsynth_clock_gen #(
+       .cycle_time_p(10000)
+     ) hbm_ref_clk_gen (
+       .o(hbm_ref_clk0)
+     );
+
+     assign hbm_ref_clk1 = hbm_ref_clk0;
+     assign apb_clk0 = hbm_ref_clk0;
+     assign apb_clk1 = hbm_ref_clk0;
+
+     // axi4 data parity
+     logic [(axi_data_width_p>>3)-1:0] axi4_wdata_parity;
+
+     hb_axi_parity  #(
+       .axi_data_width_p(axi_data_width_p)
+     ) wdata_parity (
+       .data_i(lv2_axi4.axi_wdata)
+       ,.parity_o(axi4_wdata_parity)
+     );
+
+     // instantiate an HBM chip
+     hbm_direct_no_ro hbm (
+       .HBM_REF_CLK_0	(hbm_ref_clk0)
+	,.HBM_REF_CLK_1	(hbm_ref_clk1)
+
+	,.AXI_00_ACLK		(core_clk)
+	,.AXI_00_ARESET_N	(axi_reset_n)
+	,.AXI_00_ARADDR		(lv2_axi4.axi_araddr)
+	,.AXI_00_ARBURST	(lv2_axi4.axi_arburst)
+	,.AXI_00_ARID		(lv2_axi4.axi_arid)
+	,.AXI_00_ARLEN		(lv2_axi4.axi_arlen[3:0])
+	,.AXI_00_ARSIZE		(lv2_axi4.axi_arsize)
+	,.AXI_00_ARVALID	(lv2_axi4.axi_arvalid)
+	,.AXI_00_AWADDR		(lv2_axi4.axi_awaddr)
+	,.AXI_00_AWBURST	(lv2_axi4.axi_awburst)
+	,.AXI_00_AWID		(lv2_axi4.axi_awid)
+	,.AXI_00_AWLEN		(lv2_axi4.axi_awlen[3:0])
+	,.AXI_00_AWSIZE		(lv2_axi4.axi_awsize)
+	,.AXI_00_AWVALID	(lv2_axi4.axi_awvalid)
+	,.AXI_00_RREADY		(lv2_axi4.axi_rready)
+	,.AXI_00_BREADY		(lv2_axi4.axi_bready)
+	,.AXI_00_WDATA		(lv2_axi4.axi_wdata)
+	,.AXI_00_WLAST		(lv2_axi4.axi_wlast)
+	,.AXI_00_WSTRB		(lv2_axi4.axi_wstrb)
+	,.AXI_00_WDATA_PARITY	(axi4_wdata_parity)
+	,.AXI_00_WVALID		(lv2_axi4.axi_wvalid)
+
+	,.AXI_00_ARREADY	(lv2_axi4.axi_arready)
+	,.AXI_00_AWREADY	(lv2_axi4.axi_awready)
+	,.AXI_00_RDATA_PARITY	()
+	,.AXI_00_RDATA		(lv2_axi4.axi_rdata)
+	,.AXI_00_RID		(lv2_axi4.axi_rid)
+	,.AXI_00_RLAST		(lv2_axi4.axi_rlast)
+	,.AXI_00_RRESP		(lv2_axi4.axi_rresp)
+	,.AXI_00_RVALID		(lv2_axi4.axi_rvalid)
+	,.AXI_00_WREADY		(lv2_axi4.axi_wready)
+	,.AXI_00_BID		(lv2_axi4.axi_bid)
+	,.AXI_00_BRESP		(lv2_axi4.axi_bresp)
+	,.AXI_00_BVALID		(lv2_axi4.axi_bvalid)
+
+        `tie_hbm_channel(01)
+	`tie_hbm_channel(02)
+	`tie_hbm_channel(03)
+	`tie_hbm_channel(04)
+	`tie_hbm_channel(05)
+	`tie_hbm_channel(06)
+	`tie_hbm_channel(07)
+	`tie_hbm_channel(08)
+	`tie_hbm_channel(09)
+	`tie_hbm_channel(10)
+	`tie_hbm_channel(11)
+	`tie_hbm_channel(12)
+	`tie_hbm_channel(13)
+	`tie_hbm_channel(14)
+	`tie_hbm_channel(15)
+	`tie_hbm_channel(16)
+	`tie_hbm_channel(17)
+	`tie_hbm_channel(18)
+	`tie_hbm_channel(19)
+	`tie_hbm_channel(20)
+	`tie_hbm_channel(21)
+	`tie_hbm_channel(22)
+	`tie_hbm_channel(23)
+	`tie_hbm_channel(24)
+	`tie_hbm_channel(25)
+	`tie_hbm_channel(26)
+	`tie_hbm_channel(27)
+	`tie_hbm_channel(28)
+	`tie_hbm_channel(29)
+	`tie_hbm_channel(30)
+	`tie_hbm_channel(31)
+
+        ,.APB_0_PCLK(apb_clk0)
+        ,.APB_0_PRESET_N(apb_reset_n)
+        ,.APB_0_PENABLE(1'b1)
+
+	,.APB_1_PCLK(apb_clk1)
+        ,.APB_1_PRESET_N(apb_reset_n)
+        ,.APB_1_PENABLE(1'b1)
+     );
+
+     // assertions
+     if (axi_data_width_p !== 256) begin: hbm_bad_axi_data_width
+	$fatal("expects axi_data_width_p=%d for %s: found %d",
+	       256, mem_cfg_p.name(), axi_data_width_p);
+     end
+     if (axi_addr_width_p !== 33) begin: hbm_bad_axi_addr_width
+	$fatal("expects axi_addr_width_p=%d for %s: found %d",
+	       256, mem_cfg_p.name(), axi_addr_width_p);
+     end
+     if (axi_data_width_p*axi_burst_len_p !== (block_size_in_words_p<<2)<<3)
+       begin: hbm_axi_bust_line_size_mismatch
+          $fatal("exepect axi_data_width_p*axi_burst_len_p (=%d) == block_size_in_words_p*8*4 (=%d)",
+                 axi_data_width_p*axi_burst_len_p, (block_size_in_words_p<<2)<<3);
+       end
+
+  end
+
 
 
 

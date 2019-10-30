@@ -134,7 +134,8 @@ VCS_CXXFLAGS   += $(foreach def,$(CXXFLAGS),-CFLAGS "$(def)")
 VCS_CXXDEFINES += $(foreach def,$(CXXDEFINES),-CFLAGS "$(def)")
 VCS_LDFLAGS    += $(foreach def,$(LDFLAGS),-LDFLAGS "$(def)")
 VCS_VFLAGS     += -M +lint=TFIPC-L -ntb_opts tb_timescale=1ps/1ps -lca -v2005 \
-                -timescale=1ps/1ps -sverilog -full64 -licqueue
+                -timescale=1ps/1ps -sverilog -full64 -licqueue +notimingchecks \
+                +nospecify +no_tchk_msg
 
 # NOTE: undef_vcs_macro is a HACK!!! 
 # `ifdef VCS is only used is in tb.sv top-level in the aws-fpga repository. This

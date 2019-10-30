@@ -11,7 +11,7 @@ package cl_manycore_pkg;
   `include "bsg_defines.v"
   `include "f1_parameters.vh"
   import bsg_bladerunner_mem_cfg_pkg::*;
-  
+
   parameter bsg_bladerunner_mem_cfg_e mem_cfg_p = `CL_MANYCORE_MEM_CFG;
   parameter addr_width_p = `CL_MANYCORE_MAX_EPA_WIDTH;
   parameter data_width_p = `CL_MANYCORE_DATA_WIDTH;
@@ -34,8 +34,11 @@ package cl_manycore_pkg;
   parameter vcache_size_p = sets_p * ways_p * block_size_in_words_p;
 
   parameter axi_id_width_p = 6;
-  parameter axi_addr_width_p = 64;
-  parameter axi_data_width_p = 512;
+  parameter axi_addr_width_p = 33;
+  parameter axi_data_width_p = 256;
+  //parameter axi_addr_width_p = 64;
+  //parameter axi_data_width_p = 512;
+
   parameter axi_strb_width_p = (axi_data_width_p>>3);
   parameter axi_burst_len_p = 1;
 

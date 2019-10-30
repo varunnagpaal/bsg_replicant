@@ -35,6 +35,10 @@ $(INDEPENDENT_LOGS): $(EXEC_PATH)/%.log: $(EXEC_PATH)/% %.rule
 	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd $(SIM_ARGS)\
 		+c_args="$(C_ARGS)" | tee $@
 
+INDEPENDENT_DVE:=$(foreach tgt, $(INDEPENDENT_TESTS), $(tgt).dve)
+$(INDEPENDENT_DVE): %.dve: $(EXEC_PATH)/%.vpd
+	$(DVE) -full64 -vpd $<
+
 # compilation.mk defines all of the rules for building cosimulation binaries
 # It defines the target <test_name> for each regression test.
 include $(TESTBENCH_PATH)/compilation.mk
