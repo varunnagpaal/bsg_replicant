@@ -606,23 +606,32 @@ module cl_manycore
   // -------------------------------------------------
   // DDR X4 AXI4 casting
   // -------------------------------------------------
+  localparam num_axi4_lp = 4;
+  localparam num_cache_lp = num_tiles_x_p / num_axi4_lp;
+
   `declare_bsg_axi4_bus_s(1, axi_id_width_p, axi_addr_width_p, axi_data_width_p, bsg_axi4_mosi_bus_s, bsg_axi4_miso_bus_s);
 
-  bsg_axi4_mosi_bus_s [num_tiles_x_p-1:0] m_axi4_cache_lo, m_axi4_cache_async_lo;
-  bsg_axi4_miso_bus_s [num_tiles_x_p-1:0] m_axi4_cache_li, m_axi4_cache_async_li;
-
+  bsg_axi4_mosi_bus_s [num_axi4_lp-1:0] m_axi4_cache_lo, m_axi4_cache_async_lo;
+  bsg_axi4_miso_bus_s [num_axi4_lp-1:0] m_axi4_cache_li, m_axi4_cache_async_li;
 
   // LEVEL 2
   //
   if (mem_cfg_p == e_vcache_blocking_axi4_f1_ddrx4 ||
       mem_cfg_p == e_vcache_blocking_axi4_f1_ddrx4_model) begin: lv2_axi4_x4
 
-    for (genvar i = 0; i < num_tiles_x_p; i++) begin : cache_to_axi
+    // synopsys translate_off
+    initial begin
+      assert(num_axi4_lp * num_cache_lp == num_tiles_x_p)
+        else $fatal(0, "Manycore tile x dimension should be multiple of %d!", num_axi4_lp);
+    end
+    // synopsys translate_on
+
+    for (genvar i = 0; i < num_axi4_lp; i++) begin : cache_to_axi
       bsg_cache_to_axi_hashed #(
         .addr_width_p(cache_addr_width_lp)
         ,.block_size_in_words_p(block_size_in_words_p)
         ,.data_width_p(data_width_p)
-        ,.num_cache_p(1)
+        ,.num_cache_p(num_cache_lp)
 
         ,.axi_id_width_p(axi_id_width_p)
         ,.axi_addr_width_p(axi_addr_width_p)
@@ -632,17 +641,17 @@ module cl_manycore
         .clk_i(core_clk)
         ,.reset_i(core_reset)
 
-        ,.dma_pkt_i(lv1_vcache.dma_pkt[i])
-        ,.dma_pkt_v_i(lv1_vcache.dma_pkt_v_lo[i])
-        ,.dma_pkt_yumi_o(lv1_vcache.dma_pkt_yumi_li[i])
+        ,.dma_pkt_i(lv1_vcache.dma_pkt[i*num_cache_lp+:num_cache_lp])
+        ,.dma_pkt_v_i(lv1_vcache.dma_pkt_v_lo[i*num_cache_lp+:num_cache_lp])
+        ,.dma_pkt_yumi_o(lv1_vcache.dma_pkt_yumi_li[i*num_cache_lp+:num_cache_lp])
 
-        ,.dma_data_o(lv1_vcache.dma_data_li[i])
-        ,.dma_data_v_o(lv1_vcache.dma_data_v_li[i])
-        ,.dma_data_ready_i(lv1_vcache.dma_data_ready_lo[i])
+        ,.dma_data_o(lv1_vcache.dma_data_li[i*num_cache_lp+:num_cache_lp])
+        ,.dma_data_v_o(lv1_vcache.dma_data_v_li[i*num_cache_lp+:num_cache_lp])
+        ,.dma_data_ready_i(lv1_vcache.dma_data_ready_lo[i*num_cache_lp+:num_cache_lp])
 
-        ,.dma_data_i(lv1_vcache.dma_data_lo[i])
-        ,.dma_data_v_i(lv1_vcache.dma_data_v_lo[i])
-        ,.dma_data_yumi_o(lv1_vcache.dma_data_yumi_li[i])
+        ,.dma_data_i(lv1_vcache.dma_data_lo[i*num_cache_lp+:num_cache_lp])
+        ,.dma_data_v_i(lv1_vcache.dma_data_v_lo[i*num_cache_lp+:num_cache_lp])
+        ,.dma_data_yumi_o(lv1_vcache.dma_data_yumi_li[i*num_cache_lp+:num_cache_lp])
 
         ,.axi_awid_o(m_axi4_cache_lo[i].awid)
         ,.axi_awaddr_o(m_axi4_cache_lo[i].awaddr)
@@ -934,14 +943,14 @@ module cl_manycore
 
     // synopsys translate_off
     initial begin
-      assert(num_cl_ddr_lp == num_tiles_x_p - 1)
+      assert(num_cl_ddr_lp == num_axi4_lp - 1)
         else $fatal(0, "ddr num does not match the number of tiles!");
     end
     // synopsys translate_on
 
     `ifdef COSIM
 
-    for (genvar i = 0; i < num_tiles_x_p; i++) begin : ddr_cdc
+    for (genvar i = 0; i < num_axi4_lp; i++) begin : ddr_cdc
 
       axi4_clock_converter #(
         .axi4_device_family(DEVICE_FAMILY_LP                     ),
