@@ -104,6 +104,8 @@ VSOURCES += $(CL_DIR)/hardware/bsg_bladerunner_rom.v
 VSOURCES += $(CL_DIR)/hardware/axil_to_mcl.v
 VSOURCES += $(CL_DIR)/hardware/s_axil_mcl_adapter.v
 VSOURCES += $(CL_DIR)/hardware/axil_to_mem.sv
+VSOURCES += $(CL_DIR)/hardware/axi4_clock_converter.v
+VSOURCES += $(CL_DIR)/hardware/mc_memory_hierarchy.v
 
 VHEADERS += $(HARDWARE_PATH)/axil_to_mcl.vh
 VHEADERS += $(HARDWARE_PATH)/bsg_axi_bus_pkg.vh
@@ -114,6 +116,7 @@ VSOURCES += $(HARDWARE_MACHINE_PATH)/$(CL_TOP_MODULE).sv
 VHEADERS += $(HARDWARE_MACHINE_PATH)/bsg_bladerunner_rom_pkg.vh
 VHEADERS += $(HARDWARE_MACHINE_PATH)/f1_parameters.vh
 VSOURCES += $(HARDWARE_MACHINE_PATH)/bsg_bladerunner_configuration.v
+VSOURCES += $(HARDWARE_MACHINE_PATH)/mc_runner_top.v
 
 # The following functions convert a decimal string to a binary string,
 # and a hexadecimal string (WITHOUT the preceeding 0x) into binary
