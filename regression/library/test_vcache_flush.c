@@ -32,8 +32,8 @@
 // TODO: Make these not hard coded (for example, define them from the Makefile
 // as read from the verilog parameters)
 #define NUM_SETS 64
-#define ASSOCIATIVITY 2
-#define CACHE_LINE_SIZE_WORDS 16
+#define ASSOCIATIVITY 8
+#define CACHE_LINE_SIZE_WORDS 8
 #define WORD_SIZE sizeof(uint32_t)
 #define CACHE_LINE_SIZE (CACHE_LINE_SIZE_WORDS * WORD_SIZE)
 #define ADDR_MASK ((1llu << 32) - 1)

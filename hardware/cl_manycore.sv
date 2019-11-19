@@ -831,6 +831,7 @@ module cl_manycore
                  axi_data_width_p*axi_burst_len_p, (block_size_in_words_p<<2)<<3);
        end
 
+   `include "unused_ddr_c_template.inc"
   end
 
 

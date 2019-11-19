@@ -32,8 +32,8 @@
 # <test_name> executable. The output .vpd file will be named <test_name>.vpd.
 INDEPENDENT_LOGS=$(foreach tgt, $(INDEPENDENT_TESTS), $(EXEC_PATH)/$(tgt).log)
 $(INDEPENDENT_LOGS): $(EXEC_PATH)/%.log: $(EXEC_PATH)/% %.rule
-	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd $(SIM_ARGS)\
-		+c_args="$(C_ARGS)" | tee $@
+	time strace -c $< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd $(SIM_ARGS)\
+		+c_args="$(C_ARGS)" | tee $@ >/dev/null
 
 INDEPENDENT_DVE:=$(foreach tgt, $(INDEPENDENT_TESTS), $(tgt).dve)
 $(INDEPENDENT_DVE): %.dve: $(EXEC_PATH)/%.vpd
