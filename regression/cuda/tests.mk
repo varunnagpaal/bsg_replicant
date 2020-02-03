@@ -42,7 +42,6 @@ UNIFIED_TESTS += test_tile_info
 UNIFIED_TESTS += test_barrier
 
 # "Independent Tests" use a per-test <test_name>.c file
-INDEPENDENT_TESTS += test_barrier_loop
 INDEPENDENT_TESTS += test_binary_load_buffer
 INDEPENDENT_TESTS += test_empty_parallel
 INDEPENDENT_TESTS += test_multiple_binary_load
@@ -53,6 +52,8 @@ INDEPENDENT_TESTS += test_dram_host_allocated
 INDEPENDENT_TESTS += test_dram_device_allocated
 INDEPENDENT_TESTS += test_device_memset
 INDEPENDENT_TESTS += test_device_memcpy
+INDEPENDENT_TESTS += test_barrier_loop
+INDEPENDENT_TESTS += test_shared_mem_loop
 INDEPENDENT_TESTS += test_vec_add
 INDEPENDENT_TESTS += test_vec_add_parallel
 INDEPENDENT_TESTS += test_vec_add_parallel_multi_grid
