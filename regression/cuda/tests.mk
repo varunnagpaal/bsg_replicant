@@ -78,6 +78,12 @@ INDEPENDENT_TESTS += test_log_softmax
 INDEPENDENT_TESTS += test_conv1d
 INDEPENDENT_TESTS += test_conv2d
 
+INDEPENDENT_TESTS += test_breadth_first_search
+
+CXXFLAGS+=-I$(HBGRAPHS_DIR)/include/common
+CXXFLAGS+=-I$(HBGRAPHS_DIR)/include/host
+CXXFLAGS+=-I$(GRAPH500_DIR)/generator
+
 # REGRESSION_TESTS is a list of all regression tests to run.
 REGRESSION_TESTS = $(UNIFIED_TESTS) $(INDEPENDENT_TESTS)
 
@@ -86,6 +92,6 @@ DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
 CDEFINES   += $(DEFINES)
 CXXDEFINES += $(DEFINES)
 
-FLAGS     = -g -Wall
+FLAGS     = -g -Wall -Wno-unused
 CFLAGS   += -std=c99 $(FLAGS) 
 CXXFLAGS += -std=c++11 $(FLAGS)

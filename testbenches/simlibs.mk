@@ -140,6 +140,8 @@ VSOURCES += $(BSG_MANYCORE_DIR)/v/bsg_manycore_link_sif_async_buffer.v
 include $(TESTBENCH_PATH)/ramulator.mk
 include $(TESTBENCH_PATH)/dramsim3.mk
 
+include $(TESTBENCH_PATH)/graph500.mk
+
 # -------------------- TARGETS --------------------
 # This makefile defines two variables for External Use: 
 #
