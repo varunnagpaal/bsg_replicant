@@ -77,7 +77,7 @@ int kernel_reduction_shared_mem (int argc, char **argv) {
         /*****************************************************************************************************************
         * Allocate memory on the device for A, B and C.
         ******************************************************************************************************************/
-        uint32_t N = 64;
+        uint32_t N = 16;
 
         eva_t A_device;
         rc = hb_mc_device_malloc(&device, N * sizeof(uint32_t), &A_device); /* allocate A[N] on the device */
@@ -113,7 +113,7 @@ int kernel_reduction_shared_mem (int argc, char **argv) {
         * Define tg_dim_x/y: number of tiles in each tile group
         * Grid dimensions are fixed to 1x1
         ******************************************************************************************************************/
-        hb_mc_dimension_t tg_dim = { .x = 1, .y = 1 }; 
+        hb_mc_dimension_t tg_dim = { .x = 4, .y = 4 }; 
 
         hb_mc_dimension_t grid_dim = { .x = 1 , .y = 1 };
 
