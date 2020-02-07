@@ -31,8 +31,8 @@
 REGRESSION_TESTS_TYPE = cuda
 SRC_PATH=$(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/
 
-TILE_GROUP_DIM_X = 2
-TILE_GROUP_DIM_Y = 2
+TILE_GROUP_DIM_X = 1
+TILE_GROUP_DIM_Y = 1
 
 # "Unified tests" all use the generic test top-level:
 # test_unified_main.c
@@ -77,6 +77,8 @@ INDEPENDENT_TESTS += test_softmax
 INDEPENDENT_TESTS += test_log_softmax
 INDEPENDENT_TESTS += test_conv1d
 INDEPENDENT_TESTS += test_conv2d
+
+INDEPENDENT_TESTS += test_reduction_shared_mem
 
 # REGRESSION_TESTS is a list of all regression tests to run.
 REGRESSION_TESTS = $(UNIFIED_TESTS) $(INDEPENDENT_TESTS)
