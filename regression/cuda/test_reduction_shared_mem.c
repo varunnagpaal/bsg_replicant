@@ -77,7 +77,7 @@ int kernel_reduction_shared_mem (int argc, char **argv) {
         /*****************************************************************************************************************
         * Allocate memory on the device for A, B and C.
         ******************************************************************************************************************/
-        uint32_t N = 256;
+        uint32_t N = 64;
 
         eva_t A_device;
         rc = hb_mc_device_malloc(&device, N * sizeof(uint32_t), &A_device); /* allocate A[N] on the device */
