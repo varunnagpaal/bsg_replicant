@@ -42,6 +42,7 @@ INDEPENDENT_TESTS := test_bsg_dram_loopback_cache
 INDEPENDENT_TESTS += test_symbol_to_eva
 INDEPENDENT_TESTS += test_bsg_loader_suite
 INDEPENDENT_TESTS += test_bsg_scalar_print
+INDEPENDENT_TESTS += test_big_jump
 
 # REGRESSION_TESTS is a list of all regression tests to run.
 REGRESSION_TESTS = $(UNIFIED_TESTS) $(INDEPENDENT_TESTS)
