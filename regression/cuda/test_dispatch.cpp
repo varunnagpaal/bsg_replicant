@@ -82,9 +82,6 @@ int test_loader (int argc, char **argv) {
         bin_path = args.path;
         test_name = args.name;
 
-        bsg_pr_test_info("Running the CUDA Unified Main %s "
-                         "on a grid of 2x2 tile groups\n\n", test_name);
-
         srand(time(0));
 
         /**********************************************************************/
@@ -114,6 +111,10 @@ int test_loader (int argc, char **argv) {
         
         hb_mc_dimension_t tg_dim = { .x = vcore.x, .y = vcore.y }; 
         hb_mc_dimension_t grid_dim = { .x = 1, .y = 1 };
+
+        bsg_pr_test_info("Running the CUDA Unified Main %s "
+                         "on a grid of %dx%d tile groups\n\n",
+                         test_name, vcore.x, vcore.y);
 
         /****************************************/
         /* Allocate a word for the return value */
