@@ -48,10 +48,9 @@ $(EXEC_PATH)/test_loader: %: %.o
 	$(LD) $(filter %.o, $^) $(LDFLAGS) -o $@
 
 # each target, '%', in INDEPENDENT_TESTS relies on an object file '%.o'
-$(INDEPENDENT_TESTS): LD=$(CC)
+$(INDEPENDENT_TESTS): LD:=$(CXX)
 $(INDEPENDENT_TESTS): %: $(EXEC_PATH)/%.o
 	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
-
 
 link.clean:
 	rm -rf $(INDEPENDENT_TESTS) test_loader
