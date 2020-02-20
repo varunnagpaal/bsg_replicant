@@ -31,8 +31,8 @@
 REGRESSION_TESTS_TYPE = cuda
 SRC_PATH=$(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/
 
-TILE_GROUP_DIM_X = 2
-TILE_GROUP_DIM_Y = 2
+TILE_GROUP_DIM_X = 4
+TILE_GROUP_DIM_Y = 4
 
 # "Unified tests" all use the generic test top-level:
 # test_unified_main.c
@@ -64,6 +64,7 @@ INDEPENDENT_TESTS += test_shared_mem
 INDEPENDENT_TESTS += test_shared_mem_load_store
 INDEPENDENT_TESTS += test_matrix_mul
 INDEPENDENT_TESTS += test_matrix_mul_shared_mem
+INDEPENDENT_TESTS += test_dispatch
 
 INDEPENDENT_TESTS += test_float_all_ops
 INDEPENDENT_TESTS += test_float_vec_add
@@ -91,3 +92,6 @@ CXXDEFINES += $(DEFINES)
 FLAGS     = -g -Wall
 CFLAGS   += -std=c99 $(FLAGS) 
 CXXFLAGS += -std=c++11 $(FLAGS)
+LDFLAGS  += -lrt
+
+test_dispatch: LD:=$(CXX)

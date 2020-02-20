@@ -52,6 +52,5 @@ $(addprefix $(EXEC_PATH)/,$(INDEPENDENT_TESTS)): LD=$(CXX)
 $(addprefix $(EXEC_PATH)/,$(INDEPENDENT_TESTS)): %: %.o
 	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
 
-
 link.clean:
 	rm -rf $(addprefix $(EXEC_PATH)/,$(INDEPENDENT_TESTS)) test_loader
