@@ -74,6 +74,8 @@ static int quit(hb_mc_responder_t *rsp,
         return HB_MC_SUCCESS;
 }
 
+static FILE *data_file = NULL;
+
 int test_loader (int argc, char **argv) {
         char *bin_path, *test_name;
         struct arguments_path args = {NULL, NULL};
@@ -96,7 +98,16 @@ int test_loader (int argc, char **argv) {
         // add a responder
         hb_mc_responder_t responder(test_name, ids, nullptr, quit, respond);
         CUDA_CALL(hb_mc_responder_add(&responder));
-        
+
+        // if file does not exist
+        struct stat st;
+        if (stat("test_dispatch.csv", &st) != 0) {
+                data_file = fopen("test_dispatch.csv", "w");
+                fprintf(data_file, "x,y,dispatch_seconds\n");
+        } else {        
+                data_file = fopen("test_dispatch.csv", "a+");
+        }
+
         /**********************************************************************/
         /* Define block_size_x/y: amount of work for each tile group          */
         /* Define tg_dim_x/y: number of tiles in each tile group              */
@@ -149,10 +160,13 @@ int test_loader (int argc, char **argv) {
                 for (int y = 0; y< 4; y++) {
                         auto & end  = times[x * 4 + y];
                         std::chrono::duration<double> diff = end - start;                
-                        bsg_pr_info("core (%d,%d) response time: %f seconds\n", x, y, diff.count());
+                        bsg_pr_info("core (%d,%d) response time: %1.10f seconds\n", x, y, diff.count());
+                        fprintf(data_file, "%d,%d,%1.10f\n", x, y, diff.count());
                 }
         }
 
+        fclose(data_file);
+        
         std::chrono::system_clock::time_point end =
                 std::chrono::system_clock::now();
 
