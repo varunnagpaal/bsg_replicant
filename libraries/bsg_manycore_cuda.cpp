@@ -185,8 +185,15 @@ static int hb_mc_device_tiles_set_runtime_symbols (hb_mc_device_t *device,
                                                    hb_mc_eva_t kernel_eva,      
 						   hb_mc_coordinate_t tile); 
 
-
-
+__attribute__((warn_unused_result))
+static int hb_mc_device_tiles_set_config_symbols_at_runtime (hb_mc_device_t *device,
+							     const hb_mc_eva_map_t *map,
+							     hb_mc_coordinate_t origin,
+							     hb_mc_coordinate_t tg_id,
+							     hb_mc_dimension_t tg_dim,
+							     hb_mc_dimension_t grid_dim,
+							     const hb_mc_coordinate_t *tiles,
+							     uint32_t num_tiles);
 
 
 
@@ -509,14 +516,14 @@ static int hb_mc_tile_group_initialize_tiles (hb_mc_device_t *device,
 
 
         // Set the configuration symbols of all tiles inside tile group
-        error = hb_mc_device_tiles_set_config_symbols(device,
-                                                      tg->map,
-                                                      tg->origin,
-                                                      tg->id,
-                                                      tg->dim,
-                                                      tg->grid_dim,
-                                                      tile_list,
-                                                      num_tiles);
+        error = hb_mc_device_tiles_set_config_symbols_at_runtime(device,
+								 tg->map,
+								 tg->origin,
+								 tg->id,
+								 tg->dim,
+								 tg->grid_dim,
+								 tile_list,
+								 num_tiles);
         if (error != HB_MC_SUCCESS) { 
                 bsg_pr_err("%s: failed to set grid %d tile group (%d,%d) tiles configuration symbols.\n", 
                            __func__,
@@ -1888,6 +1895,126 @@ static int hb_mc_tile_set_symbol_val (hb_mc_manycore_t *mc,
 }
 
 
+
+/**
+ * Sends packets to all tiles in the list to set their configuration symbols in binary
+ * Symbols include: __bsg_x/y, __bsg_id, __bsg_grp_org_x/y, CSR_TGO_X/Y registers,
+ * __bsg_tile_group_id_x/y, __bsg_grid_dim_x/y
+ * @param[in]  device        Pointer to device
+ * @param[in]  map           EVA to NPA mapping for tiles
+ * @param[in]  origin        Origin  coordinates of the tiles in the list
+ * @param[in]  tg_id         Tile group id of the tiles in the list
+ * @param[in]  tg_dim        Tile group dimensions of the tiles in the list
+ * @param[in]  grid_dim      Grid dimensions of the tiles in the list
+ * @param[in]  tiles         List of tile coordinates to set symbols
+ * @param[in]  num_tiles     Number of tiles in the list
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+static int hb_mc_device_tiles_set_config_symbols (hb_mc_device_t *device,
+						  const hb_mc_eva_map_t *map,
+						  hb_mc_coordinate_t origin,
+						  hb_mc_coordinate_t tg_id,
+						  hb_mc_dimension_t tg_dim,
+						  hb_mc_dimension_t grid_dim,
+						  const hb_mc_coordinate_t *tiles,
+						  uint32_t num_tiles) {
+
+
+        int error;
+        for (hb_mc_idx_t tile_id = 0; tile_id < num_tiles; tile_id ++) {
+		// only set the control registers for each tile - deligate the rest to the origin tile
+                hb_mc_coordinate_t coord = hb_mc_coordinate_get_relative (origin, tiles[tile_id]);
+
+                CALL(hb_mc_tile_set_origin_registers(device->mc, &(tiles[tile_id]), &origin));
+
+
+		// Set tile's tile group origin __bsg_grp_org_x/y symbols.
+		hb_mc_idx_t origin_x = hb_mc_coordinate_get_x (origin);
+		hb_mc_idx_t origin_y = hb_mc_coordinate_get_y (origin);
+
+		CALL(hb_mc_tile_set_symbol_val(device->mc, map,
+					       device->program->bin, device->program->bin_size,
+					       &(tiles[tile_id]), "__bsg_grp_org_x", &origin_x));
+
+
+		CALL(hb_mc_tile_set_symbol_val(device->mc, map,
+					       device->program->bin, device->program->bin_size,
+					       &(tiles[tile_id]), "__bsg_grp_org_y", &origin_y));
+
+		// Set tile's index __bsg_x/y symbols.
+		// A tile's __bsg_x/y symbols represent its X/Y
+		// coordinates with respect to the origin tile
+		hb_mc_idx_t coord_x = hb_mc_coordinate_get_x (coord);
+		hb_mc_idx_t coord_y = hb_mc_coordinate_get_y (coord);
+		CALL(hb_mc_tile_set_symbol_val(device->mc, map,
+					       device->program->bin, device->program->bin_size,
+					       &tiles[tile_id], "__bsg_x", &coord_x));
+
+		CALL(hb_mc_tile_set_symbol_val(device->mc, map,
+					       device->program->bin, device->program->bin_size,
+					       &tiles[tile_id], "__bsg_y", &coord_y));
+
+		// Set tile's __bsg_id symbol.
+		// bsg_id uniquely identifies each tile in a tile group
+		// Tile group is a 2D array of tiles that concurrently run a kernel inside the binary
+		// __bsg_x/y represent the X/Y coordiantes of tile relative to tile group origin
+		// The flat tile id is calculated using tile group dimensions
+		// and the tile group X/Y coordiantes relative to tile group origin as follows:
+		// __bsg_id = __bsg_y * __bsg_tile_group_dim_x + __bsg_x
+		hb_mc_idx_t id = hb_mc_coordinate_get_y(coord) * hb_mc_dimension_get_x(tg_dim) + hb_mc_coordinate_get_x(coord);
+		CALL(hb_mc_tile_set_symbol_val(device->mc, map,
+					       device->program->bin, device->program->bin_size,
+					       &tiles[tile_id], "__bsg_id", &id));
+
+		// Set tile's tile group index __bsg_tile_group_id_x/y symbols.
+		// Grid is a 2D array of tile groups representing an application
+		// bsg_tile_group_id uniquely identifies each tile group in a grid.
+		// The flat tile group id is calculated using the grid dimensions
+		// and the tile group X/Y coordinates relative to grid origin as follows:
+		// __bsg_tile_group_id = __bsg_tile_group_id_y * __bsg_grid_dim_x + __bsg_tile_group_id_x
+		// bsg_tile_group_id is used in bsg_print_stat to distinguish between
+		// unique tile group invocations that have been executed in sequence on the same tile(s).
+		hb_mc_idx_t tg_id_x = hb_mc_coordinate_get_x (tg_id);
+		hb_mc_idx_t tg_id_y = hb_mc_coordinate_get_y (tg_id);
+		hb_mc_idx_t tg_id_xy = tg_id_y * hb_mc_dimension_get_x(grid_dim) + tg_id_x;
+		CALL(hb_mc_tile_set_symbol_val(device->mc, map,
+					       device->program->bin, device->program->bin_size,
+					       &tiles[tile_id], "__bsg_tile_group_id_x", &tg_id_x));
+
+		CALL(hb_mc_tile_set_symbol_val(device->mc, map,
+					       device->program->bin, device->program->bin_size,
+					       &tiles[tile_id], "__bsg_tile_group_id_y", &tg_id_y));
+
+		CALL(hb_mc_tile_set_symbol_val(device->mc, map,
+					       device->program->bin, device->program->bin_size,
+					       &tiles[tile_id], "__bsg_tile_group_id", &tg_id_xy));
+
+		// Set tile's grid dimension __bsg_grid_dim_x/y symbol.
+		hb_mc_idx_t grid_dim_x = hb_mc_dimension_get_x (grid_dim);
+		hb_mc_idx_t grid_dim_y = hb_mc_dimension_get_y (grid_dim);
+		CALL(hb_mc_tile_set_symbol_val(device->mc, map,
+					       device->program->bin, device->program->bin_size,
+					       &tiles[tile_id], "__bsg_grid_dim_x", &grid_dim_x));
+
+		CALL(hb_mc_tile_set_symbol_val(device->mc, map,
+					       device->program->bin, device->program->bin_size,
+					       &tiles[tile_id], "__bsg_grid_dim_y", &grid_dim_y));
+
+		// Set tile's finish signal value  cuda_finish_signal_val symbol.
+		uint32_t finish_signal_val = HB_MC_CUDA_FINISH_SIGNAL_VAL;
+		CALL(hb_mc_tile_set_symbol_val(device->mc, map,
+					       device->program->bin, device->program->bin_size,
+					       &tiles[tile_id], "cuda_finish_signal_val", &finish_signal_val));
+
+		// Set tile's kernel not loaded value  cuda_kernel_not_loaded_val symbol.
+		uint32_t kernel_not_loaded_val = HB_MC_CUDA_KERNEL_NOT_LOADED_VAL;
+		CALL(hb_mc_tile_set_symbol_val(device->mc, map,
+					       device->program->bin, device->program->bin_size,
+					       &tiles[tile_id], "cuda_kernel_not_loaded_val", &kernel_not_loaded_val));
+
+		return HB_MC_SUCCESS;
+	}
+}
 
 
 /**
