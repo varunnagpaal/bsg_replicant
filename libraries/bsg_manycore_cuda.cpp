@@ -42,7 +42,7 @@
 #include <string.h>
 #endif
 
-
+#define ORIGIN_ONLY
 
 #define CALL(expr)							\
         {                                                               \
@@ -166,6 +166,14 @@ static int hb_mc_tile_set_symbol_val (hb_mc_manycore_t *mc,
                                       const char* symbol,
                                       const uint32_t *val);
 
+__attribute__((warn_unused_result))
+static int hb_mc_device_tile_set_config_symbols (hb_mc_device_t *device,
+						 const hb_mc_eva_map_t *map,
+						 hb_mc_coordinate_t origin,
+						 hb_mc_coordinate_t tg_id,
+						 hb_mc_dimension_t tg_dim,
+						 hb_mc_dimension_t grid_dim,
+						 hb_mc_coordinate_t tile);
 __attribute__((warn_unused_result))
 static int hb_mc_device_tiles_set_config_symbols (hb_mc_device_t *device,
                                                   const hb_mc_eva_map_t *map,
@@ -515,6 +523,10 @@ static int hb_mc_tile_group_initialize_tiles (hb_mc_device_t *device,
 
 
 
+#ifdef ORIGIN_ONLY
+	CALL(hb_mc_device_tile_set_config_symbols(device, tg->map, tg->origin, tg->id,
+						  tg->dim, tg->grid_dim, tg->origin));
+#else
         // Set the configuration symbols of all tiles inside tile group
         error = hb_mc_device_tiles_set_config_symbols(device,
                                                       tg->map,
@@ -532,7 +544,7 @@ static int hb_mc_tile_group_initialize_tiles (hb_mc_device_t *device,
                            hb_mc_coordinate_get_y (tg->id));
                 return error;
         }
-
+#endif
 
 
         tg->status = HB_MC_TILE_GROUP_STATUS_ALLOCATED;
@@ -800,7 +812,7 @@ static int hb_mc_tile_group_launch (hb_mc_device_t *device,
                         tg_tile_id ++;
                 }
         }
-#define ORIGIN_ONLY
+
 #ifdef  ORIGIN_ONLY
 	CALL(hb_mc_device_tile_set_runtime_symbols(device,
 						   tg->map,
