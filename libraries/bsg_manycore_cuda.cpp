@@ -516,16 +516,16 @@ static int hb_mc_tile_group_initialize_tiles (hb_mc_device_t *device,
 
 
         // Set the configuration symbols of all tiles inside tile group
-        error = hb_mc_device_tiles_set_config_symbols_at_runtime(device,
-								 tg->map,
-								 tg->origin,
-								 tg->id,
-								 tg->dim,
-								 tg->grid_dim,
-								 tile_list,
-								 num_tiles);
-        if (error != HB_MC_SUCCESS) { 
-                bsg_pr_err("%s: failed to set grid %d tile group (%d,%d) tiles configuration symbols.\n", 
+        error = hb_mc_device_tiles_set_config_symbols(device,
+                                                      tg->map,
+                                                      tg->origin,
+                                                      tg->id,
+                                                      tg->dim,
+                                                      tg->grid_dim,
+                                                      tile_list,
+                                                      num_tiles);
+        if (error != HB_MC_SUCCESS) {
+                bsg_pr_err("%s: failed to set grid %d tile group (%d,%d) tiles configuration symbols.\n",
                            __func__,
                            tg->grid_id,
                            hb_mc_coordinate_get_x (tg->id),
