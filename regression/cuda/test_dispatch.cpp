@@ -28,7 +28,9 @@
 #include "test_dispatch.hpp"
 #include <sys/stat.h>
 #include <bsg_manycore_responder.h>
+#ifndef COSIM
 #include <chrono>
+#endif
 #include <array>
 
 #define ALLOC_NAME "default_allocator"
@@ -52,7 +54,9 @@ static hb_mc_request_packet_id_t ids [] = {
         { }
 };
 
+#ifndef COSIM
 std::array<std::chrono::system_clock::time_point, 16> times;
+#endif
 
 static int respond(hb_mc_responder_t *rsp,
                    hb_mc_manycore_t *mc,
@@ -63,8 +67,10 @@ static int respond(hb_mc_responder_t *rsp,
                         hb_mc_request_packet_get_x_src(rqst) *
                         4 + (hb_mc_request_packet_get_y_src(rqst)-1)
                 );
-        
+
+#ifndef COSIM
         times[i] = std::chrono::system_clock::now();
+#endif
         return HB_MC_SUCCESS;
 }
 
@@ -74,7 +80,9 @@ static int quit(hb_mc_responder_t *rsp,
         return HB_MC_SUCCESS;
 }
 
+#ifndef COSIM
 static FILE *data_file = NULL;
+#endif
 
 int test_loader (int argc, char **argv) {
         char *bin_path, *test_name;
@@ -100,6 +108,7 @@ int test_loader (int argc, char **argv) {
         CUDA_CALL(hb_mc_responder_add(&responder));
 
         // if file does not exist
+#ifndef COSIM
         struct stat st;
         if (stat("test_dispatch.csv", &st) != 0) {
                 data_file = fopen("test_dispatch.csv", "w");
@@ -107,6 +116,7 @@ int test_loader (int argc, char **argv) {
         } else {        
                 data_file = fopen("test_dispatch.csv", "a+");
         }
+#endif
 
         /**********************************************************************/
         /* Define block_size_x/y: amount of work for each tile group          */
@@ -151,11 +161,13 @@ int test_loader (int argc, char **argv) {
         /**********************************************************************/
         /* Launch and execute all tile groups on device and wait for finish.  */ 
         /**********************************************************************/
+#ifndef COSIM
         std::chrono::system_clock::time_point start =
                 std::chrono::system_clock::now();
-        
+#endif
         CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
 
+#ifndef COSIM
         for (int x = 0; x < 4; x++) {
                 for (int y = 0; y< 4; y++) {
                         auto & end  = times[x * 4 + y];
@@ -172,7 +184,7 @@ int test_loader (int argc, char **argv) {
 
         std::chrono::duration<double> diff = end-start;
         bsg_pr_info("job completion: %f seconds\n", diff.count());
-        
+#endif
         /*************************/
         /* Read the return value */
         /*************************/
