@@ -143,5 +143,8 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         }
         config->vcache_stripe_words = idx;
 
+	config->dram_channels = raw[HB_MC_CONFIG_DRAM_CHANNELS];
+	config->dram_bank_size_words = raw[HB_MC_CONFIG_DRAM_BANK_SIZE_WORDS];
+	
         return HB_MC_SUCCESS;
 }
