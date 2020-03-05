@@ -1297,6 +1297,8 @@ module cl_manycore
        ,.icache_entries_p(icache_entries_p)
        ,.data_width_p(data_width_p)
        ,.dmem_size_p(data_width_p)
+       ,.header_print_x_cord_p(0)
+       ,.header_print_y_cord_p(2)
        ) 
    vcore_prof
      (
