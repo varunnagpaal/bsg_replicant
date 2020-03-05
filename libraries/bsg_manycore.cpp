@@ -1548,10 +1548,10 @@ static int hb_mc_manycore_npa_to_buffer_cosim_only(hb_mc_manycore_t *mc, const h
     /*
       Use the backdoor to our non-synthesizable memory.
      */
-    Memory *memory = bsg_test_dram_channel_get_memory(id);
-    parameter_t bank_size = memory->_data.size()/caches_per_channel;
+    manycore_pr_dbg(mc, "%s: Getting memory channel with ID %llu for cache %u\n",
+		    __func__, id, cache_id);
 
-    hb_mc_epa_t epa = hb_mc_npa_get_epa(npa);
+    Memory *memory = bsg_test_dram_channel_get_memory(id);
 
     char npa_str[256];
 
@@ -1562,6 +1562,8 @@ static int hb_mc_manycore_npa_to_buffer_cosim_only(hb_mc_manycore_t *mc, const h
         return HB_MC_FAIL;
     }
 
+    parameter_t bank_size = memory->_data.size()/caches_per_channel;
+    hb_mc_epa_t epa = hb_mc_npa_get_epa(npa);
     address_t addr = bank*bank_size + epa;
 
     manycore_pr_dbg(mc, "%s: Mapped %s to Channel %2lu, Address 0x%08lx\n",
