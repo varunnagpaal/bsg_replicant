@@ -41,10 +41,13 @@ static int measure_read_latency_of(hb_mc_npa_t addr)
     return HB_MC_SUCCESS;
 }
 
+static hb_mc_idx_t base_y;
+static hb_mc_idx_t base_x;
+
 static int warm_up()
 {
     uint32_t data;
-    hb_mc_npa_t addr = hb_mc_npa_from_x_y(0, 1, HB_MC_TILE_EPA_DMEM_BASE);
+    hb_mc_npa_t addr = hb_mc_npa_from_x_y(base_x, base_y, HB_MC_TILE_EPA_DMEM_BASE);
 
     for (int i = 0; i < 100; i++) {
         auto start = chrono::system_clock::now();            
@@ -71,17 +74,22 @@ static int
 test(int argc, char *argv[])
 {
     
-    hb_mc_npa_t addresses [5]; 
-
-    addresses[0] = hb_mc_npa_from_x_y(0, 1, HB_MC_TILE_EPA_DMEM_BASE);
-    addresses[1] = hb_mc_npa_from_x_y(0, 4, HB_MC_TILE_EPA_DMEM_BASE);
-    addresses[2] = hb_mc_npa_from_x_y(3, 4, HB_MC_TILE_EPA_DMEM_BASE);
-    addresses[3] = hb_mc_npa_from_x_y(0, 5, 0);
-    addresses[4] = hb_mc_npa_from_x_y(1, 5, 0);
+    hb_mc_npa_t addresses [3];
 
     init_data_file();
     
     CUDA_CALL(hb_mc_manycore_init(mc, "latency", 0));
+
+    base_y
+        = hb_mc_config_get_vcore_base_y(hb_mc_manycore_get_config(mc));
+
+    base_x
+        = hb_mc_config_get_vcore_base_x(hb_mc_manycore_get_config(mc));
+    
+    addresses[0] = hb_mc_npa_from_x_y(base_x,   base_y,   HB_MC_TILE_EPA_DMEM_BASE);
+    addresses[1] = hb_mc_npa_from_x_y(base_x,   base_y+3, HB_MC_TILE_EPA_DMEM_BASE);
+    addresses[2] = hb_mc_npa_from_x_y(base_x+3, base_y+4, HB_MC_TILE_EPA_DMEM_BASE);
+
     CUDA_CALL(warm_up());
 
     for (size_t i = 0; i < array_size(addresses); i++)

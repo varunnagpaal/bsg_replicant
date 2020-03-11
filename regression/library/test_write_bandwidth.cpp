@@ -21,6 +21,7 @@ using namespace std;
 
 static hb_mc_manycore_t manycore = {}, *mc = &manycore;
 static FILE *data_file = stdout;
+hb_mc_idx_t vc_x, vc_y;
 
 static int measure_write_bandwidth_of(hb_mc_npa_t addr, size_t sz)
 {
@@ -46,7 +47,7 @@ static int measure_write_bandwidth_of(hb_mc_npa_t addr, size_t sz)
 
 static int warm_up()
 {
-    hb_mc_npa_t addr = hb_mc_npa_from_x_y(0, 1, HB_MC_TILE_EPA_DMEM_BASE);
+    hb_mc_npa_t addr = hb_mc_npa_from_x_y(vc_x, vc_y, HB_MC_TILE_EPA_DMEM_BASE);
     std::vector<char> data(4 << 10, -1);
     
     for (int i = 0; i < 100; i++) {
@@ -76,20 +77,19 @@ test(int argc, char *argv[])
     std::vector<hb_mc_npa_t> addresses;
     std::vector<size_t> sizes;
 
-    for (int x = 0; x < 4; x++)
-        for (int y = 1; y < 5; y++) {
+    init_data_file();
+    
+    CUDA_CALL(hb_mc_manycore_init(mc, "write bw", 0));
+
+    vc_y = hb_mc_config_get_vcore_base_y(hb_mc_manycore_get_config(mc));
+    vc_x = hb_mc_config_get_vcore_base_x(hb_mc_manycore_get_config(mc));
+    
+    for (int x = vc_x; x < vc_x+4; x++)
+        for (int y = vc_y; y < vc_y+4; y++) {
             addresses.push_back(hb_mc_npa_from_x_y(x, y, HB_MC_TILE_EPA_DMEM_BASE));
             sizes.push_back(4 << 10);
         }
 
-    for (int x = 0; x < 4; x++) {
-        addresses.push_back(hb_mc_npa_from_x_y(x, 5, HB_MC_TILE_EPA_DMEM_BASE));
-        sizes.push_back(32 << 10);
-    }
-    
-    init_data_file();
-    
-    CUDA_CALL(hb_mc_manycore_init(mc, "write bw", 0));
     CUDA_CALL(warm_up());
 
     for (size_t i = 0; i < addresses.size(); i++)
