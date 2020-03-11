@@ -32,6 +32,7 @@
 #include <chrono>
 #endif
 #include <array>
+#include <map>
 
 #define ALLOC_NAME "default_allocator"
 
@@ -54,8 +55,10 @@ static hb_mc_request_packet_id_t ids [] = {
         { }
 };
 
+hb_mc_idx_t vc_x, vc_y;
+
 #ifndef COSIM
-std::array<std::chrono::system_clock::time_point, 16> times;
+std::map<int, std::chrono::system_clock::time_point> times;
 #endif
 
 static int respond(hb_mc_responder_t *rsp,
@@ -64,8 +67,8 @@ static int respond(hb_mc_responder_t *rsp,
 {
         int i = static_cast<int>
                 (
-                        hb_mc_request_packet_get_x_src(rqst) *
-                        4 + (hb_mc_request_packet_get_y_src(rqst)-1)
+                        hb_mc_request_packet_get_x_src(rqst) * 4
+                        + (hb_mc_request_packet_get_y_src(rqst))
                 );
 
 #ifndef COSIM
@@ -129,6 +132,12 @@ int test_loader (int argc, char **argv) {
 
         hb_mc_dimension_t vcore =
                 hb_mc_config_get_dimension_vcore(cfg);
+
+        hb_mc_coordinate_t vcore_base =
+                hb_mc_config_get_origin_vcore(cfg);
+
+        vc_x = vcore_base.x;
+        vc_y = vcore_base.y;
         
         hb_mc_dimension_t tg_dim = { .x = vcore.x, .y = vcore.y }; 
         hb_mc_dimension_t grid_dim = { .x = 1, .y = 1 };
@@ -169,8 +178,8 @@ int test_loader (int argc, char **argv) {
 
 #ifndef COSIM
         for (int x = 0; x < 4; x++) {
-                for (int y = 0; y< 4; y++) {
-                        auto & end  = times[x * 4 + y];
+                for (int y = 0; y < 4; y++) {
+                        auto & end  = times[(vc_x + x)*4 + vc_y + y];
                         std::chrono::duration<double> diff = end - start;                
                         bsg_pr_info("core (%d,%d) response time: %1.10f seconds\n", x, y, diff.count());
                         fprintf(data_file, "%d,%d,%1.10f\n", x, y, diff.count());
@@ -185,26 +194,11 @@ int test_loader (int argc, char **argv) {
         std::chrono::duration<double> diff = end-start;
         bsg_pr_info("job completion: %f seconds\n", diff.count());
 #endif
-        /*************************/
-        /* Read the return value */
-        /*************************/
-        uint32_t rcode;
-        CUDA_CALL(hb_mc_device_memcpy(&device, &rcode, (const void*)raddr, sizeof(rcode),
-                                      HB_MC_MEMCPY_TO_HOST));
-
         /**********************************************************************/
         /* Freeze the tiles and memory manager cleanup.                       */
         /**********************************************************************/
         CUDA_CALL(hb_mc_device_finish(&device));
         
-        /*************************/
-        /* Check the return code */
-        /*************************/
-        if (rcode != 0) {
-                bsg_pr_err("kernel returned non-zero.\n");
-                return HB_MC_FAIL;
-        }
-
         return HB_MC_SUCCESS;
 }
 
