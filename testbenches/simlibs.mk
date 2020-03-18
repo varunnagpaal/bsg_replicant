@@ -214,9 +214,6 @@ $(TESTBENCH_PATH)/vcs_simlibs/$(BSG_MACHINE_NAME)/AN.DB: $(TESTBENCH_PATH)/synop
 # Management libaries, so we build them as necessary. They do NOT need to be
 # re-built every time a regression test is compiled
 
-# libbsg_manycore_runtime will be compiled in $(LIBRARIES_PATH)
-LDFLAGS    += -L$(LIBRARIES_PATH) -Wl,-rpath=$(LIBRARIES_PATH)
-
 # Define the COSIM macro so that the DPI Versions of functions are called
 $(LIB_OBJECTS): CXXFLAGS += -DCOSIM
 $(LIB_OBJECTS): CFLAGS   += -DCOSIM
