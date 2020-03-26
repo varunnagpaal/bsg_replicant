@@ -160,7 +160,7 @@ charvtobin-debug:
 # This target generates the ASCII file for the memory system ROM data.
 # It is important to keep these grouped together.
 $(HARDWARE_PATH)/bsg_bladerunner_memsys.rom: $(BSG_MACHINE_PATH)/Makefile.machine.include
-	@echo $(call charv2bin,$(CL_MANYCORE_MEMSYS_ID)) >> $@.temp
+	@echo $(call charv2bin,$(CL_MANYCORE_MEMSYS_ID)) > $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_RO_BITS)) >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BG_BITS)) >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BA_BITS)) >> $@.temp
