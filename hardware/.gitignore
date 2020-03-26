@@ -1,4 +1,5 @@
 f1_parameters.vh
 bsg_bladerunner_configuration.rom
+bsg_bladerunner_memsys.rom
 bsg_bladerunner_configuration.v
 bsg_bladerunner_rom_pkg.vh
