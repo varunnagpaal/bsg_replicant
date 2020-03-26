@@ -243,6 +243,7 @@ $(HARDWARE_PATH)/bsg_bladerunner_rom_pkg.vh: $(HARDWARE_PATH)/bsg_bladerunner_co
 
 hardware.clean:
 	rm -f $(HARDWARE_PATH)/bsg_bladerunner_configuration.{rom,v}
+	rm -f $(HARDWARE_PATH)/bsg_bladerunner_memsys.rom
 	rm -f $(HARDWARE_PATH)/f1_parameters.vh
 	rm -f $(HARDWARE_PATH)/bsg_bladerunner_rom_pkg.vh
 
